@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f5f58">
+<title>Article Ledger</title>
+<style>
+  :root{
+    --bg:#f3f5f4; --card:#ffffff; --ink:#18211f; --muted:#5f6b68; --line:#e2e7e5;
+    --brand:#0f5f58; --brand-soft:#e3f1ef; --paid:#177245; --paid-soft:#e4f4ea;
+    --due:#b42318; --due-soft:#fdecea; --warn:#a15c00; --warn-soft:#fff3dc;
+    --radius:14px; --shadow:0 1px 2px rgba(16,24,22,.06),0 2px 8px rgba(16,24,22,.05);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Bengali",sans-serif}
+  button,input,select,textarea{font:inherit;color:inherit}
+  header{position:sticky;top:0;z-index:20;background:var(--brand);color:#fff;display:flex;align-items:center;gap:6px;padding:12px 10px;padding-top:calc(12px + env(safe-area-inset-top));min-height:56px}
+  header h1{font-size:18px;font-weight:600;margin:0 4px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .icon-btn{background:none;border:0;color:inherit;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;cursor:pointer}
+  .icon-btn:active{background:rgba(255,255,255,.15)}
+  .icon-btn svg{width:22px;height:22px}
+  main{padding:14px 12px 96px;max-width:720px;margin:0 auto}
+  nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:20;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+  nav.tabs button{flex:1;background:none;border:0;padding:8px 0 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:var(--muted);cursor:pointer}
+  nav.tabs button svg{width:22px;height:22px}
+  nav.tabs button.on{color:var(--brand);font-weight:600}
+  .fab{position:fixed;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:21;width:56px;height:56px;border-radius:16px;border:0;background:var(--brand);color:#fff;box-shadow:0 4px 14px rgba(15,95,88,.35);display:grid;place-items:center;cursor:pointer}
+  .fab svg{width:26px;height:26px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+  .tap{cursor:pointer}
+  .tap:active{background:#f7faf9}
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+  .stat{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 10px}
+  .stat .lbl{font-size:12px;color:var(--muted)}
+  .stat .val{font-size:17px;font-weight:700;margin-top:2px;word-break:break-word}
+  .stat.paid .val{color:var(--paid)} .stat.due .val{color:var(--due)}
+  .bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
+  .bar > i{display:block;height:100%;background:var(--paid);border-radius:99px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:18px 4px 8px;font-weight:600;display:flex;align-items:center;justify-content:space-between}
+  h2 button{text-transform:none;letter-spacing:0}
+  .title{font-weight:600;font-size:16px;margin:0 0 2px}
+  .sub{color:var(--muted);font-size:13px}
+  .row{display:flex;align-items:center;gap:10px}
+  .row .grow{flex:1;min-width:0}
+  .money3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;font-size:13px}
+  .money3 div span{display:block;color:var(--muted);font-size:11px}
+  .money3 b{font-weight:600}
+  .green{color:var(--paid)} .red{color:var(--due)} .amber{color:var(--warn)}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap}
+  .badge.paid{background:var(--paid-soft);color:var(--paid)}
+  .badge.due{background:var(--due-soft);color:var(--due)}
+  .badge.part{background:var(--warn-soft);color:var(--warn)}
+  .badge.none{background:var(--line);color:var(--muted)}
+  .list-item > b{white-space:nowrap}
+  .list-item{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
+  .list-item:last-child{border-bottom:0}
+  .avatar{width:38px;height:38px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-weight:700;flex:none}
+  .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;background:var(--brand);color:#fff}
+  .btn.ghost{background:var(--brand-soft);color:var(--brand)}
+  .btn.danger{background:var(--due-soft);color:var(--due)}
+  .btn.small{padding:6px 10px;font-size:13px;border-radius:8px}
+  .btn.block{width:100%;display:block}
+  .btn:disabled{opacity:.5}
+  .actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .search{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:10px}
+  .chips{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .chip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .empty{text-align:center;color:var(--muted);padding:40px 16px}
+  .empty svg{width:56px;height:56px;opacity:.35;margin-bottom:8px}
+  .pay-row{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-top:1px dashed var(--line)}
+  .pay-row .grow{flex:1;min-width:0}
+  .x{background:none;border:0;color:var(--muted);font-size:18px;line-height:1;padding:4px 6px;cursor:pointer}
+  .author-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+  .kv{font-size:13px;color:var(--muted);word-break:break-word}
+  /* sheet */
+  .overlay{position:fixed;inset:0;background:rgba(10,20,18,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
+  .sheet{background:#fff;width:100%;max-width:720px;border-radius:18px 18px 0 0;max-height:92vh;overflow:auto;padding:16px 16px calc(18px + env(safe-area-inset-bottom));animation:up .18s ease-out}
+  .sheet h3{margin:0 0 12px;font-size:18px}
+  @keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  label.f{display:block;margin-bottom:12px}
+  label.f > span{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+  label.f input,label.f select,label.f textarea{width:100%;padding:11px 12px;border:1px solid #cfd8d5;border-radius:10px;background:#fff}
+  label.f input:focus,label.f select:focus,label.f textarea:focus{outline:2px solid var(--brand);outline-offset:-1px;border-color:var(--brand)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .sheet-actions{display:flex;gap:8px;margin-top:6px}
+  .sheet-actions .btn{flex:1}
+  .err{color:var(--due);font-size:13px;margin:-4px 0 10px;min-height:0}
+  .toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#1d2725;color:#fff;padding:10px 16px;border-radius:10px;z-index:60;font-size:14px;max-width:90%;text-align:center;animation:fade .2s}
+  .setting{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+  .setting:last-child{border-bottom:0}
+  .setting svg{width:22px;height:22px;color:var(--brand);flex:none}
+  .note{font-size:13px;color:var(--muted);background:var(--brand-soft);border-radius:10px;padding:10px 12px;margin-top:8px;white-space:pre-wrap}
+  @media (max-width:360px){.stat .val{font-size:15px}}
+</style>
+</head>
+<body>
+<header>
+  <button class="icon-btn" id="backBtn" aria-label="Back" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <h1 id="title">Article Ledger</h1>
+  <button class="icon-btn" id="settingsBtn" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+</header>
+<main id="app"></main>
+<button class="fab" id="fab" aria-label="New article"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+<nav class="tabs">
+  <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Summary</button>
+  <button data-tab="articles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Articles</button>
+  <button data-tab="authors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg>Authors</button>
+</nav>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- storage ---------- */
+const KEY = 'articleLedger.v1';
+let db = load();
+function blank(){ return {version:1, articles:[], settings:{currency:'SAR', lastBackup:null}}; }
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return blank();
+    const d = JSON.parse(raw);
+    if(!d || !Array.isArray(d.articles)) return blank();
+    d.settings = Object.assign({currency:'SAR', lastBackup:null}, d.settings||{});
+    return d;
+  }catch(e){ return blank(); }
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(db)); }
+  catch(e){ toast('Could not save. Storage may be full.'); }
+}
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+const r2 = n => Math.round((Number(n)||0) * 100) / 100;
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const nf = new Intl.NumberFormat('en-US',{minimumFractionDigits:0, maximumFractionDigits:2});
+const cur = () => db.settings.currency || 'SAR';
+const nf2 = new Intl.NumberFormat('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtNum = n => { const v = r2(n); return Number.isInteger(v) ? nf.format(v) : nf2.format(v); };
+const money = n => fmtNum(n) + '\u00a0' + esc(cur());
+function fdate(s){
+  if(!s) return '';
+  const d = new Date(s + 'T00:00:00');
+  if(isNaN(d)) return esc(s);
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+const initials = n => (String(n||'?').trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('') || '?').toUpperCase();
+const authorKey = a => (a.email||'').trim().toLowerCase() || ('name:' + (a.name||'').trim().toLowerCase());
+
+/* ---------- calculations ---------- */
+function authorCalc(a){
+  const fee = r2(a.fee);
+  const paid = r2((a.payments||[]).reduce((s,p)=>s + (Number(p.amount)||0), 0));
+  const due = r2(Math.max(fee - paid, 0));
+  const extra = r2(Math.max(paid - fee, 0));
+  let status = 'none';
+  if(fee <= 0 && paid <= 0) status = 'none';
+  else if(due <= 0) status = 'paid';
+  else if(paid > 0) status = 'part';
+  else status = 'due';
+  return {fee, paid, due, extra, status};
+}
+function articleCalc(ar){
+  let total=0, paid=0, due=0, extra=0;
+  (ar.authors||[]).forEach(a => { const c = authorCalc(a); total+=c.fee; paid+=c.paid; due+=c.due; extra+=c.extra; });
+  total=r2(total); paid=r2(paid); due=r2(due); extra=r2(extra);
+  let status = 'none';
+  if(total > 0 || paid > 0) status = due <= 0 ? 'paid' : (paid > 0 ? 'part' : 'due');
+  return {total, paid, due, extra, status, pct: total>0 ? Math.min(100, Math.round(Math.min(paid,total)/total*100)) : 0};
+}
+function grandCalc(){
+  let total=0, paid=0, due=0;
+  db.articles.forEach(ar => { const c = articleCalc(ar); total+=c.total; paid+=c.paid; due+=c.due; });
+  return {total:r2(total), paid:r2(paid), due:r2(due), pct: total>0 ? Math.min(100, Math.round(Math.min(paid,total)/total*100)) : 0};
+}
+function authorIndex(){
+  const map = new Map();
+  db.articles.forEach(ar => (ar.authors||[]).forEach(a => {
+    const k = authorKey(a);
+    if(!map.has(k)) map.set(k, {key:k, name:a.name, email:a.email, university:a.university, department:a.department, items:[], fee:0, paid:0, due:0});
+    const e = map.get(k), c = authorCalc(a);
+    ['name','email','university','department'].forEach(f => { if(!e[f] && a[f]) e[f] = a[f]; });
+    e.items.push({article:ar, author:a, calc:c});
+    e.fee += c.fee; e.paid += c.paid; e.due += c.due;
+  }));
+  map.forEach(e => { e.fee=r2(e.fee); e.paid=r2(e.paid); e.due=r2(e.due); });
+  return map;
+}
+const statusBadge = s => ({paid:'<span class="badge paid">Paid</span>', part:'<span class="badge part">Partly paid</span>', due:'<span class="badge due">Unpaid</span>', none:'<span class="badge none">No fee</span>'})[s];
+const findArticle = id => db.articles.find(a => a.id === id);
+
+/* ---------- navigation ---------- */
+let stack = [{view:'home'}];
+let articleFilter = 'all', articleQuery = '', authorQuery = '';
+function go(view, params){ stack.push(Object.assign({view}, params||{})); render(); window.scrollTo(0,0); }
+function tab(view){ stack = [{view}]; render(); window.scrollTo(0,0); }
+function back(){
+  if(closeSheet()) return true;
+  if(stack.length > 1){ stack.pop(); render(); return true; }
+  if(stack[0].view !== 'home'){ tab('home'); return true; }
+  return false;
+}
+window.appBack = back; // called by the Android back button
+
+$('#backBtn').onclick = back;
+$('#settingsBtn').onclick = () => go('settings');
+$('#fab').onclick = () => articleForm();
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => tab(b.dataset.tab));
+
+function render(){
+  const top = stack[stack.length-1];
+  const root = stack[0].view;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === root));
+  $('#backBtn').style.display = stack.length > 1 ? 'grid' : 'none';
+  $('#fab').style.display = (top.view === 'home' || top.view === 'articles') ? 'grid' : 'none';
+  const views = {home:viewHome, articles:viewArticles, article:viewArticle, authors:viewAuthors, author:viewAuthor, settings:viewSettings};
+  (views[top.view] || viewHome)(top);
+}
+function setTitle(t){ $('#title').textContent = t; }
+
+/* ---------- views ---------- */
+const ICON_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>';
+
+function viewHome(){
+  setTitle('Article Ledger');
+  const g = grandCalc();
+  if(!db.articles.length){
+    $('#app').innerHTML = `<div class="empty">${ICON_DOC}<p><b>No articles yet</b><br>Add an article, then add its authors and their fees.</p><button class="btn" id="first">Add first article</button></div>`;
+    $('#first').onclick = () => articleForm();
+    return;
+  }
+  const idx = [...authorIndex().values()].filter(e => e.due > 0).sort((a,b) => b.due - a.due).slice(0,6);
+  const pays = [];
+  db.articles.forEach(ar => (ar.authors||[]).forEach(a => (a.payments||[]).forEach(p => pays.push({ar, a, p}))));
+  pays.sort((x,y) => (y.p.date||'').localeCompare(x.p.date||'') || (y.p.created||0) - (x.p.created||0));
+  const counts = {paid:0, open:0};
+  db.articles.forEach(ar => { const c = articleCalc(ar); if(c.status==='paid') counts.paid++; else if(c.status!=='none') counts.open++; });
+
+  $('#app').innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="lbl">Total billed</div><div class="val">${money(g.total)}</div></div>
+      <div class="stat paid"><div class="lbl">Received</div><div class="val">${money(g.paid)}</div></div>
+      <div class="stat due"><div class="lbl">Due</div><div class="val">${money(g.due)}</div></div>
+    </div>
+    <div class="card">
+      <div class="row"><div class="grow"><b>${g.pct}%</b> collected</div><div class="sub">${db.articles.length} article${db.articles.length===1?'':'s'} · ${counts.paid} fully paid · ${counts.open} open</div></div>
+      <div class="bar"><i style="width:${g.pct}%"></i></div>
+    </div>
+    <h2>Who owes the most</h2>
+    <div class="card" style="padding:4px 14px">${idx.length ? idx.map(e => `
+      <div class="list-item tap" data-author="${esc(e.key)}">
+        <div class="avatar">${esc(initials(e.name))}</div>
+        <div class="grow"><div class="title" style="font-size:15px">${esc(e.name)}</div><div class="sub">${e.items.length} article${e.items.length===1?'':'s'}${e.university?' · '+esc(e.university):''}</div></div>
+        <b class="red">${money(e.due)}</b>
+      </div>`).join('') : '<div class="empty" style="padding:18px">Nobody owes anything right now.</div>'}
+    </div>
+    <h2>Recent payments</h2>
+    <div class="card" style="padding:4px 14px">${pays.length ? pays.slice(0,8).map(x => `
+      <div class="list-item tap" data-article="${x.ar.id}">
+        <div class="grow"><div style="font-weight:600">${esc(x.a.name)}</div><div class="sub">${fdate(x.p.date)} · ${esc(x.ar.title)}</div></div>
+        <b class="green">+${money(x.p.amount)}</b>
+      </div>`).join('') : '<div class="empty" style="padding:18px">No payments recorded yet.</div>'}
+    </div>`;
+  bindLinks();
+}
+
+function viewArticles(){
+  setTitle('Articles');
+  const q = articleQuery.trim().toLowerCase();
+  let list = db.articles.map(ar => ({ar, c:articleCalc(ar)}));
+  if(articleFilter === 'due') list = list.filter(x => x.c.due > 0);
+  if(articleFilter === 'paid') list = list.filter(x => x.c.status === 'paid');
+  if(q) list = list.filter(({ar}) => [ar.title, ar.journal, ...(ar.authors||[]).flatMap(a => [a.name, a.email, a.university, a.department])].some(v => (v||'').toLowerCase().includes(q)));
+  list.sort((x,y) => (y.ar.date||'').localeCompare(x.ar.date||'') || (y.ar.created||0) - (x.ar.created||0));
+
+  $('#app').innerHTML = `
+    <input class="search" id="q" type="search" placeholder="Search title, author, university…" value="${esc(articleQuery)}">
+    <div class="chips">
+      ${[['all','All'],['due','Has due'],['paid','Fully paid']].map(([k,l]) => `<button class="chip ${articleFilter===k?'on':''}" data-f="${k}">${l}</button>`).join('')}
+    </div>
+    <div id="list">${list.length ? list.map(({ar,c}) => `
+      <div class="card tap" data-article="${ar.id}">
+        <div class="row"><div class="grow"><div class="title">${esc(ar.title)}</div>
+          <div class="sub">${(ar.authors||[]).length} author${(ar.authors||[]).length===1?'':'s'}${ar.journal?' · '+esc(ar.journal):''}${ar.date?' · '+fdate(ar.date):''}</div></div>
+          ${statusBadge(c.status)}</div>
+        <div class="money3"><div><span>Total</span><b>${money(c.total)}</b></div><div><span>Paid</span><b class="green">${money(c.paid)}</b></div><div><span>Due</span><b class="${c.due>0?'red':''}">${money(c.due)}</b></div></div>
+        <div class="bar"><i style="width:${c.pct}%"></i></div>
+      </div>`).join('') : `<div class="empty">${ICON_DOC}<p>${db.articles.length ? 'No articles match.' : 'No articles yet. Tap + to add one.'}</p></div>`}
+    </div>`;
+  const qi = $('#q');
+  qi.oninput = () => { articleQuery = qi.value; const pos = qi.selectionStart; viewArticles(); const n = $('#q'); n.focus(); try{ n.setSelectionRange(pos,pos); }catch(e){} };
+  document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { articleFilter = b.dataset.f; viewArticles(); });
+  bindLinks();
+}
+
+function viewArticle(p){
+  const ar = findArticle(p.id);
+  if(!ar){ back(); return; }
+  setTitle('Article');
+  const c = articleCalc(ar);
+  $('#app').innerHTML = `
+    <div class="card">
+      <div class="title" style="font-size:18px">${esc(ar.title)}</div>
+      <div class="sub">${[ar.journal ? esc(ar.journal) : '', ar.date ? fdate(ar.date) : ''].filter(Boolean).join(' · ') || '&nbsp;'}</div>
+      <div class="money3"><div><span>Total</span><b>${money(c.total)}</b></div><div><span>Paid</span><b class="green">${money(c.paid)}</b></div><div><span>Due</span><b class="${c.due>0?'red':''}">${money(c.due)}</b></div></div>
+      <div class="bar"><i style="width:${c.pct}%"></i></div>
+      ${c.extra > 0 ? `<div class="sub amber" style="margin-top:6px">Overpaid by ${money(c.extra)}</div>` : ''}
+      ${ar.notes ? `<div class="note">${esc(ar.notes)}</div>` : ''}
+      <div class="actions"><button class="btn small ghost" id="editAr">Edit</button><button class="btn small danger" id="delAr">Delete</button></div>
+    </div>
+    <h2>Authors (${(ar.authors||[]).length}) <button class="btn small" id="addAu">+ Add author</button></h2>
+    ${(ar.authors||[]).length ? ar.authors.map((a,i) => authorCard(ar, a, i)).join('') : '<div class="card empty" style="padding:24px">No authors yet. Add each author and how much they will pay.</div>'}
+  `;
+  $('#editAr').onclick = () => articleForm(ar);
+  $('#delAr').onclick = async () => {
+    if(await confirmBox('Delete this article?', `"${ar.title}" and all its authors and payments will be removed.`, 'Delete')){
+      db.articles = db.articles.filter(x => x.id !== ar.id); save(); back(); toast('Article deleted');
+    }
+  };
+  $('#addAu').onclick = () => authorForm(ar);
+  document.querySelectorAll('[data-act]').forEach(b => b.onclick = async (ev) => {
+    ev.stopPropagation();
+    const a = ar.authors.find(x => x.id === b.dataset.au);
+    if(!a) return;
+    const act = b.dataset.act;
+    if(act === 'pay') paymentForm(ar, a);
+    if(act === 'edit') authorForm(ar, a);
+    if(act === 'remind') remind(ar, a);
+    if(act === 'del'){
+      if(await confirmBox('Remove author?', `${a.name} and their payments will be removed from this article.`, 'Remove')){
+        ar.authors = ar.authors.filter(x => x.id !== a.id); save(); render();
+      }
+    }
+    if(act === 'delpay'){
+      const pay = (a.payments||[]).find(x => x.id === b.dataset.pay);
+      if(pay && await confirmBox('Delete payment?', `${money(pay.amount)} on ${fdate(pay.date)} from ${a.name}.`, 'Delete')){
+        a.payments = a.payments.filter(x => x.id !== pay.id); save(); render();
+      }
+    }
+  });
+}
+
+function authorCard(ar, a, i){
+  const c = authorCalc(a);
+  const pays = (a.payments||[]).slice().sort((x,y) => (x.date||'').localeCompare(y.date||''));
+  return `<div class="card">
+    <div class="row">
+      <div class="avatar">${esc(initials(a.name))}</div>
+      <div class="grow"><div class="title" style="font-size:15px">${i+1}. ${esc(a.name)}</div>
+        <div class="kv">${[a.department, a.university].filter(Boolean).map(esc).join(', ')}</div>
+        ${a.email ? `<div class="kv">${esc(a.email)}</div>` : ''}</div>
+      ${statusBadge(c.status)}
+    </div>
+    <div class="money3"><div><span>Fee</span><b>${money(c.fee)}</b></div><div><span>Paid</span><b class="green">${money(c.paid)}</b></div><div><span>Due</span><b class="${c.due>0?'red':''}">${money(c.due)}</b></div></div>
+    ${c.extra > 0 ? `<div class="sub amber" style="margin-top:4px">Paid ${money(c.extra)} more than the fee</div>` : ''}
+    ${pays.length ? `<div style="margin-top:8px">${pays.map(p => `<div class="pay-row"><div class="grow"><b class="green">${money(p.amount)}</b> · ${fdate(p.date)}${p.method?' · '+esc(p.method):''}${p.note?`<div class="sub">${esc(p.note)}</div>`:''}</div><button class="x" data-act="delpay" data-au="${a.id}" data-pay="${p.id}" aria-label="Delete payment">×</button></div>`).join('')}</div>` : ''}
+    <div class="actions">
+      <button class="btn small" data-act="pay" data-au="${a.id}" >+ Payment</button>
+      <button class="btn small ghost" data-act="edit" data-au="${a.id}">Edit</button>
+      ${a.email && c.due > 0 ? `<button class="btn small ghost" data-act="remind" data-au="${a.id}">Email reminder</button>` : ''}
+      <button class="btn small danger" data-act="del" data-au="${a.id}">Remove</button>
+    </div>
+  </div>`;
+}
+
+function viewAuthors(){
+  setTitle('Authors');
+  const q = authorQuery.trim().toLowerCase();
+  let list = [...authorIndex().values()];
+  if(q) list = list.filter(e => [e.name, e.email, e.university, e.department].some(v => (v||'').toLowerCase().includes(q)));
+  list.sort((a,b) => b.due - a.due || (a.name||'').localeCompare(b.name||''));
+  $('#app').innerHTML = `
+    <input class="search" id="q" type="search" placeholder="Search name, email, university…" value="${esc(authorQuery)}">
+    ${list.length ? `<div class="card" style="padding:4px 14px">${list.map(e => `
+      <div class="list-item tap" data-author="${esc(e.key)}">
+        <div class="avatar">${esc(initials(e.name))}</div>
+        <div class="grow"><div style="font-weight:600">${esc(e.name)}</div>
+          <div class="sub">${e.items.length} article${e.items.length===1?'':'s'}${e.university?' · '+esc(e.university):''}</div></div>
+        <div style="text-align:right">${e.due > 0 ? `<b class="red">${money(e.due)}</b><div class="sub">due</div>` : `<span class="badge ${e.fee>0?'paid':'none'}">${e.fee>0?'Paid':'No fee'}</span>`}</div>
+      </div>`).join('')}</div>` : `<div class="empty"><p>${db.articles.length ? 'No authors match.' : 'Authors you add to articles will appear here.'}</p></div>`}`;
+  const qi = $('#q');
+  qi.oninput = () => { authorQuery = qi.value; const pos = qi.selectionStart; viewAuthors(); const n = $('#q'); n.focus(); try{ n.setSelectionRange(pos,pos); }catch(e){} };
+  bindLinks();
+}
+
+function viewAuthor(p){
+  const e = authorIndex().get(p.key);
+  if(!e){ back(); return; }
+  setTitle('Author');
+  $('#app').innerHTML = `
+    <div class="card">
+      <div class="row"><div class="avatar" style="width:48px;height:48px;font-size:18px">${esc(initials(e.name))}</div>
+        <div class="grow"><div class="title" style="font-size:18px">${esc(e.name)}</div>
+          <div class="kv">${[e.department, e.university].filter(Boolean).map(esc).join(', ')}</div>
+          ${e.email ? `<div class="kv">${esc(e.email)}</div>` : ''}</div></div>
+      <div class="money3"><div><span>Total fees</span><b>${money(e.fee)}</b></div><div><span>Paid</span><b class="green">${money(e.paid)}</b></div><div><span>Due</span><b class="${e.due>0?'red':''}">${money(e.due)}</b></div></div>
+    </div>
+    <h2>Articles (${e.items.length})</h2>
+    ${e.items.map(x => `
+      <div class="card tap" data-article="${x.article.id}">
+        <div class="row"><div class="grow"><div class="title" style="font-size:15px">${esc(x.article.title)}</div>
+          <div class="sub">${x.article.date ? fdate(x.article.date) : ''}</div></div>${statusBadge(x.calc.status)}</div>
+        <div class="money3"><div><span>Fee</span><b>${money(x.calc.fee)}</b></div><div><span>Paid</span><b class="green">${money(x.calc.paid)}</b></div><div><span>Due</span><b class="${x.calc.due>0?'red':''}">${money(x.calc.due)}</b></div></div>
+      </div>`).join('')}`;
+  bindLinks();
+}
+
+function viewSettings(){
+  setTitle('Settings & backup');
+  const lb = db.settings.lastBackup;
+  $('#app').innerHTML = `
+    <div class="card">
+      <label class="f" style="margin:0"><span>Currency shown in the app</span>
+        <input id="curr" value="${esc(cur())}" maxlength="8" placeholder="SAR"></label>
+    </div>
+    <h2>Backup</h2>
+    <div class="card" style="padding:4px 14px">
+      <div class="setting" id="exp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><div class="grow"><b>Save backup file</b><div class="sub">${lb ? 'Last backup: ' + fdate(lb) : 'No backup saved yet'}</div></div></div>
+      <div class="setting" id="imp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg><div class="grow"><b>Restore from backup</b><div class="sub">Replaces the data on this phone</div></div></div>
+      <div class="setting" id="csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg><div class="grow"><b>Export report (CSV)</b><div class="sub">Opens in Excel or Google Sheets</div></div></div>
+    </div>
+    <div class="note">Your data is stored only on this phone. Save a backup file now and then, and keep a copy in Google Drive or email it to yourself. If the app is uninstalled, data without a backup is lost.</div>
+    <h2>Danger zone</h2>
+    <div class="card"><button class="btn danger block" id="wipe">Erase all data</button></div>
+    <p class="sub" style="text-align:center;margin-top:20px">Article Ledger · ${db.articles.length} articles stored</p>
+    <input type="file" id="fileIn" accept=".json,application/json,text/plain" style="display:none">`;
+  const ci = $('#curr');
+  ci.onchange = () => { db.settings.currency = ci.value.trim() || 'SAR'; save(); toast('Currency updated'); };
+  $('#exp').onclick = exportBackup;
+  $('#csv').onclick = exportCSV;
+  $('#imp').onclick = () => {
+    if(window.AndroidBridge && AndroidBridge.pickFile) AndroidBridge.pickFile();
+    else $('#fileIn').click();
+  };
+  $('#fileIn').onchange = ev => {
+    const f = ev.target.files[0]; if(!f) return;
+    const rd = new FileReader(); rd.onload = () => importText(String(rd.result)); rd.readAsText(f);
+    ev.target.value = '';
+  };
+  $('#wipe').onclick = async () => {
+    if(await confirmBox('Erase everything?', 'All articles, authors and payments on this phone will be deleted. Save a backup first if you might need them.', 'Erase all')){
+      db = blank(); save(); tab('home'); toast('All data erased');
+    }
+  };
+}
+
+function bindLinks(){
+  document.querySelectorAll('[data-article]').forEach(el => el.onclick = () => go('article', {id: el.dataset.article}));
+  document.querySelectorAll('[data-author]').forEach(el => el.onclick = () => go('author', {key: el.dataset.author}));
+}
+
+/* ---------- sheets / forms ---------- */
+let sheetEl = null, sheetResolve = null;
+function openSheet(html){
+  closeSheet();
+  sheetEl = document.createElement('div');
+  sheetEl.className = 'overlay';
+  sheetEl.innerHTML = `<div class="sheet" role="dialog">${html}</div>`;
+  sheetEl.addEventListener('click', e => { if(e.target === sheetEl) closeSheet(); });
+  document.body.appendChild(sheetEl);
+  return sheetEl;
+}
+function closeSheet(){
+  if(!sheetEl) return false;
+  sheetEl.remove(); sheetEl = null;
+  if(sheetResolve){ const r = sheetResolve; sheetResolve = null; r(false); }
+  return true;
+}
+function confirmBox(title, msg, okLabel){
+  return new Promise(res => {
+    const el = openSheet(`<h3>${esc(title)}</h3><p class="sub" style="font-size:14px">${esc(msg)}</p>
+      <div class="sheet-actions"><button class="btn ghost" data-c="0">Cancel</button><button class="btn" style="background:var(--due)" data-c="1">${esc(okLabel||'OK')}</button></div>`);
+    sheetResolve = res;
+    el.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const v = b.dataset.c === '1'; sheetResolve = null; closeSheet(); res(v); });
+  });
+}
+function field(id, label, value, attrs){ return `<label class="f"><span>${label}</span><input id="${id}" value="${esc(value)}" ${attrs||''}></label>`; }
+
+function articleForm(ar){
+  const isNew = !ar;
+  const el = openSheet(`<h3>${isNew ? 'New article' : 'Edit article'}</h3>
+    ${field('fTitle','Article title *', ar ? ar.title : '', 'autocomplete="off"')}
+    ${field('fJournal','Journal / publisher (optional)', ar ? ar.journal : '', 'autocomplete="off"')}
+    ${field('fDate','Date', ar ? (ar.date||'') : today(), 'type="date"')}
+    <label class="f"><span>Notes (optional)</span><textarea id="fNotes" rows="2">${esc(ar ? ar.notes : '')}</textarea></label>
+    <div class="err" id="fErr"></div>
+    <div class="sheet-actions"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="ok">${isNew ? 'Create' : 'Save'}</button></div>`);
+  el.querySelector('#cancel').onclick = closeSheet;
+  el.querySelector('#ok').onclick = () => {
+    const title = $('#fTitle').value.trim();
+    if(!title){ $('#fErr').textContent = 'Please enter the article title.'; return; }
+    const data = {title, journal:$('#fJournal').value.trim(), date:$('#fDate').value, notes:$('#fNotes').value.trim()};
+    if(isNew){
+      const n = Object.assign({id:uid(), created:Date.now(), authors:[]}, data);
+      db.articles.push(n); save(); closeSheet(); go('article', {id:n.id});
+      setTimeout(() => authorForm(n), 120);
+    } else {
+      Object.assign(ar, data); save(); closeSheet(); render();
+    }
+  };
+  if(isNew) setTimeout(() => $('#fTitle').focus(), 50);
+}
+
+function authorForm(ar, a){
+  const isNew = !a;
+  const known = [...authorIndex().values()];
+  const el = openSheet(`<h3>${isNew ? 'Add author' : 'Edit author'}</h3>
+    <datalist id="knownNames">${known.map(k => `<option value="${esc(k.name)}">`).join('')}</datalist>
+    ${field('aName','Author name *', a ? a.name : '', 'list="knownNames" autocomplete="off"')}
+    ${field('aEmail','Email', a ? a.email : '', 'type="email" autocomplete="off" inputmode="email"')}
+    ${field('aUni','University', a ? a.university : '', 'autocomplete="off"')}
+    ${field('aDept','Department', a ? a.department : '', 'autocomplete="off"')}
+    ${field('aFee','Amount this author will pay (' + esc(cur()) + ') *', a ? a.fee : '', 'type="number" inputmode="decimal" min="0" step="0.01"')}
+    <div class="err" id="aErr"></div>
+    <div class="sheet-actions"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="ok">${isNew ? 'Add author' : 'Save'}</button>${isNew ? '<button class="btn ghost" id="okMore">Add + next</button>' : ''}</div>`);
+  const nameIn = el.querySelector('#aName');
+  nameIn.addEventListener('change', () => {
+    const m = known.find(k => (k.name||'').toLowerCase() === nameIn.value.trim().toLowerCase());
+    if(!m) return;
+    [['aEmail','email'],['aUni','university'],['aDept','department']].forEach(([id,f]) => { const i = el.querySelector('#'+id); if(!i.value && m[f]) i.value = m[f]; });
+  });
+  el.querySelector('#cancel').onclick = closeSheet;
+  const submit = (more) => {
+    const name = nameIn.value.trim();
+    const feeRaw = el.querySelector('#aFee').value;
+    const fee = Number(feeRaw);
+    const email = el.querySelector('#aEmail').value.trim();
+    if(!name){ $('#aErr').textContent = 'Please enter the author name.'; return; }
+    if(feeRaw === '' || !isFinite(fee) || fee < 0){ $('#aErr').textContent = 'Please enter a valid amount (0 or more).'; return; }
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $('#aErr').textContent = 'That email address looks wrong.'; return; }
+    const data = {name, email, university:el.querySelector('#aUni').value.trim(), department:el.querySelector('#aDept').value.trim(), fee:r2(fee)};
+    if(isNew){ ar.authors = ar.authors || []; ar.authors.push(Object.assign({id:uid(), payments:[]}, data)); }
+    else Object.assign(a, data);
+    save(); closeSheet(); render();
+    if(more){ setTimeout(() => authorForm(ar), 80); }
+    else toast(isNew ? 'Author added' : 'Saved');
+  };
+  el.querySelector('#ok').onclick = () => submit(false);
+  if(isNew){ el.querySelector('#okMore').onclick = () => submit(true); setTimeout(() => nameIn.focus(), 50); }
+}
+
+function paymentForm(ar, a){
+  const c = authorCalc(a);
+  const el = openSheet(`<h3>Payment from ${esc(a.name)}</h3>
+    <p class="sub" style="margin-top:-6px">Fee ${money(c.fee)} · paid ${money(c.paid)} · <b class="${c.due>0?'red':''}">due ${money(c.due)}</b></p>
+    ${field('pAmt','Amount received (' + esc(cur()) + ') *', c.due > 0 ? c.due : '', 'type="number" inputmode="decimal" min="0" step="0.01"')}
+    <div class="two">
+      ${field('pDate','Date', today(), 'type="date"')}
+      <label class="f"><span>Method</span><select id="pMethod">${['Bank transfer','Cash','STC Pay','Western Union','Other'].map(m => `<option>${m}</option>`).join('')}</select></label>
+    </div>
+    ${field('pNote','Note (optional)', '', 'autocomplete="off" placeholder="e.g. reference number"')}
+    <div class="err" id="pErr"></div>
+    <div class="sheet-actions"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="ok">Save payment</button></div>`);
+  el.querySelector('#cancel').onclick = closeSheet;
+  el.querySelector('#ok').onclick = async () => {
+    const amt = Number(el.querySelector('#pAmt').value);
+    if(!isFinite(amt) || amt <= 0){ $('#pErr').textContent = 'Please enter the amount received.'; return; }
+    const p = {id:uid(), created:Date.now(), amount:r2(amt), date:el.querySelector('#pDate').value || today(), method:el.querySelector('#pMethod').value, note:el.querySelector('#pNote').value.trim()};
+    if(amt > c.due + 0.001){
+      const msg = c.due > 0 ? `${money(amt)} is more than the ${money(c.due)} still due. Save it anyway?` : `${a.name} has nothing due. Save this payment anyway?`;
+      sheetResolve = null;
+      if(!(await confirmBox('More than the due amount', msg, 'Save anyway'))) return;
+    } else closeSheet();
+    a.payments = a.payments || []; a.payments.push(p); save(); render(); toast('Payment saved');
+  };
+  setTimeout(() => el.querySelector('#pAmt').focus(), 50);
+}
+
+function remind(ar, a){
+  const c = authorCalc(a);
+  const subject = `Payment reminder: ${ar.title}`;
+  const body = `Dear ${a.name},\n\nThis is a friendly reminder about your share for the article "${ar.title}".\n\nAgreed amount: ${fmtNum(c.fee)} ${cur()}\nReceived so far: ${fmtNum(c.paid)} ${cur()}\nRemaining: ${fmtNum(c.due)} ${cur()}\n\nPlease let me know once the payment is sent.\n\nThank you.`;
+  const url = `mailto:${a.email.replace(/[?&#\s]/g, '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = url;
+}
+
+/* ---------- backup / export ---------- */
+function stamp(){ return today(); }
+function saveFile(name, mime, text){
+  if(window.AndroidBridge && AndroidBridge.saveFile){ AndroidBridge.saveFile(name, mime, text); return; }
+  const blob = new Blob([text], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a'); link.href = url; link.download = name;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  window.onNativeSaved(true, name);
+}
+function exportBackup(){
+  db.settings.lastBackup = today(); save();
+  saveFile(`article-ledger-backup-${stamp()}.json`, 'application/json', JSON.stringify(db, null, 1));
+}
+function exportCSV(){
+  const q = v => { const s = String(v==null?'':v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+  const rows = [['Article','Journal','Article date','Author','Email','University','Department','Fee ('+cur()+')','Paid ('+cur()+')','Due ('+cur()+')','Status','Payments']];
+  db.articles.forEach(ar => (ar.authors||[]).forEach(a => {
+    const c = authorCalc(a);
+    rows.push([ar.title, ar.journal, ar.date, a.name, a.email, a.university, a.department, c.fee, c.paid, c.due,
+      {paid:'Paid',part:'Partly paid',due:'Unpaid',none:'No fee'}[c.status],
+      (a.payments||[]).map(p => `${p.date} ${p.amount}${p.method?' ('+p.method+')':''}`).join('; ')]);
+  }));
+  const g = grandCalc();
+  rows.push([]); rows.push(['TOTAL','','','','','','',g.total,g.paid,g.due,'','']);
+  saveFile(`article-ledger-report-${stamp()}.csv`, 'text/csv', '﻿' + rows.map(r => r.map(q).join(',')).join('\r\n'));
+}
+async function importText(text){
+  let d;
+  try{ d = JSON.parse(text); }catch(e){ toast('That file is not a valid backup.'); return; }
+  if(!d || !Array.isArray(d.articles)){ toast('That file is not an Article Ledger backup.'); return; }
+  const ok = await confirmBox('Restore this backup?', `It has ${d.articles.length} article(s). The ${db.articles.length} article(s) on this phone now will be replaced.`, 'Restore');
+  if(!ok) return;
+  d.settings = Object.assign({currency:'SAR', lastBackup:null}, d.settings||{});
+  db = d; save(); tab('home'); toast('Backup restored');
+}
+// called from Android after the user picks / saves a file
+window.onNativeFileLoaded = text => importText(text);
+window.onNativeSaved = (ok, name) => toast(ok ? 'Saved' + (name ? ': ' + name : '') : 'File was not saved');
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){
+  const old = document.querySelector('.toast'); if(old) old.remove();
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); clearTimeout(toastT); toastT = setTimeout(() => t.remove(), 2600);
+}
+
+window.__ledger = {get db(){return db;}, articleCalc, authorCalc, grandCalc}; // for testing
+render();
+})();
+</script>
+</body>
+</html>
